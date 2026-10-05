@@ -3,6 +3,8 @@ name: Render and deploy profile-doom
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "state/**"
   workflow_dispatch:
 
 permissions:
@@ -34,7 +36,7 @@ jobs:
             ffmpeg \
             python3-pil
 
-      - name: Render real game session
+      - name: Render current game state
         run: bash scripts/capture_doom.sh
 
       - name: Render status card
