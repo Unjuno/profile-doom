@@ -2,14 +2,16 @@ name: Profile status tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, profile-polish-v4]
     paths:
       - 'scripts/render_status.py'
+      - 'scripts/render_panel.py'
       - 'tests/**'
       - '.github/workflows/profile-status-tests.yml'
   pull_request:
     paths:
       - 'scripts/render_status.py'
+      - 'scripts/render_panel.py'
       - 'tests/**'
       - '.github/workflows/profile-status-tests.yml'
   workflow_dispatch:
@@ -20,13 +22,17 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Run status regression tests
-        run: python3 -m unittest discover -s tests -v
+      - name: Install presentation test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-pil fonts-dejavu-core
+      - name: Run all presentation regression tests
+        run: /usr/bin/python3 -m unittest discover -s tests -v
       - name: Verify export against the repository checkpoint
         run: |
-          python3 scripts/render_status.py --output "$RUNNER_TEMP/profile-status"
+          /usr/bin/python3 scripts/render_status.py --output "$RUNNER_TEMP/profile-status"
           test -s "$RUNNER_TEMP/profile-status/status-v2-light.svg"
           test -s "$RUNNER_TEMP/profile-status/status-v2-dark.svg"
