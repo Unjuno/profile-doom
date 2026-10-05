@@ -1,0 +1,118 @@
+name: Play shared profile DOOM
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: profile-doom-game
+  cancel-in-progress: false
+
+jobs:
+  play:
+    if: github.event_name == 'workflow_dispatch' || github.event.issue.number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    outputs:
+      command_count: ${{ steps.collect.outputs.count }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Collect unprocessed controller commands
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROLLER_ISSUE: "1"
+        run: |
+          mkdir -p runtime
+          COUNT="$(python3 scripts/collect_commands.py runtime/commands.json)"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Collected $COUNT command(s)"
+          cat runtime/commands.json
+
+      - name: Stop on empty queue
+        if: steps.collect.outputs.count == '0'
+        run: echo "No new valid controller commands."
+
+      - name: Install DOOM runtime and capture tools
+        if: steps.collect.outputs.count != '0'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            chocolate-doom \
+            freedoom \
+            xvfb \
+            xdotool \
+            x11-utils \
+            ffmpeg \
+            python3-pil
+
+      - name: Apply commands and render game
+        if: steps.collect.outputs.count != '0'
+        env:
+          COMMANDS_FILE: runtime/commands.json
+        run: bash scripts/capture_doom.sh
+
+      - name: Update shared metadata
+        if: steps.collect.outputs.count != '0'
+        run: python3 scripts/update_game_state.py runtime/commands.json
+
+      - name: Commit shared save state
+        if: steps.collect.outputs.count != '0'
+        run: |
+          test -s state/save/doomsav0.dsg
+          git config user.name "profile-doom[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/game.json state/save/doomsav0.dsg
+          if git diff --cached --quiet; then
+            echo "No state change to commit"
+          else
+            git commit -m "game: apply shared input [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      - name: Render status card
+        if: steps.collect.outputs.count != '0'
+        run: python3 scripts/render_status.py
+
+      - name: Verify output
+        if: steps.collect.outputs.count != '0'
+        run: |
+          test -s site/doom.gif
+          test -s site/status.svg
+          file site/doom.gif
+          du -h site/doom.gif
+
+      - name: Configure Pages
+        if: steps.collect.outputs.count != '0'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: steps.collect.outputs.count != '0'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    if: needs.play.outputs.command_count != '0'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: play
+    steps:
+      - name: Deploy updated game to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
