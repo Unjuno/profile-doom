@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>profile-doom</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #010409;
+      color: #f0f6fc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    main { width: min(94vw, 820px); }
+    .shell {
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0d1117;
+      box-shadow: 0 18px 70px rgba(0,0,0,.45);
+    }
+    header {
+      display: flex;
+      gap: .6rem;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #21262d;
+      color: #8b949e;
+      font-size: 13px;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #30363d; }
+    .screen { padding: 18px; }
+    .screen img { display: block; width: 100%; height: auto; image-rendering: auto; }
+    .status { margin-top: 12px; }
+    .status img { width: 100%; }
+    footer {
+      padding: 0 18px 18px;
+      color: #8b949e;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    code { color: #c9d1d9; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="shell">
+      <header>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span>Unjuno/profile-doom</span>
+      </header>
+      <div class="screen">
+        <img src="./doom.gif" alt="Animated profile-doom render">
+        <div class="status"><img src="./status.svg" alt="profile-doom status"></div>
+      </div>
+      <footer>
+        This is the rendering surface. The first build is a synthetic animation used to validate the GitHub Profile → Pages GIF path before connecting a DOOM-compatible runtime.
+      </footer>
+    </section>
+  </main>
+</body>
+</html>
