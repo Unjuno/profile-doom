@@ -6,13 +6,19 @@ on:
     paths:
       - 'scripts/render_status.py'
       - 'scripts/render_panel.py'
+      - 'scripts/collect_issue_command.py'
+      - 'scripts/update_game_state.py'
       - 'tests/**'
+      - '.github/workflows/play.yml'
       - '.github/workflows/profile-status-tests.yml'
   pull_request:
     paths:
       - 'scripts/render_status.py'
       - 'scripts/render_panel.py'
+      - 'scripts/collect_issue_command.py'
+      - 'scripts/update_game_state.py'
       - 'tests/**'
+      - '.github/workflows/play.yml'
       - '.github/workflows/profile-status-tests.yml'
   workflow_dispatch:
 
