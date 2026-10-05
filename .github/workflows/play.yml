@@ -27,6 +27,7 @@ jobs:
     timeout-minutes: 12
     outputs:
       command_count: ${{ steps.collect.outputs.count }}
+      processed_issues: ${{ steps.collect.outputs.processed_issues }}
 
     steps:
       - name: Checkout
@@ -47,7 +48,14 @@ jobs:
           else
             COUNT="$(python3 scripts/collect_commands.py runtime/commands.json)"
           fi
+          PROCESSED="$(python3 - <<'PY'
+import json
+payload = json.load(open("runtime/commands.json", encoding="utf-8"))
+print(",".join(str(int(value)) for value in payload.get("processed_issue_numbers", [])))
+PY
+)"
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "processed_issues=$PROCESSED" >> "$GITHUB_OUTPUT"
           echo "Collected $COUNT command(s)"
           cat runtime/commands.json
 
@@ -129,8 +137,13 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Close processed one-shot input issue
-        if: github.event_name == 'issues'
+      - name: Close processed one-shot input issues
+        if: github.event_name == 'issues' && needs.play.outputs.processed_issues != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --reason completed
+          PROCESSED_ISSUES: ${{ needs.play.outputs.processed_issues }}
+        run: |
+          IFS=',' read -ra ISSUE_NUMBERS <<< "$PROCESSED_ISSUES"
+          for issue_number in "${ISSUE_NUMBERS[@]}"; do
+            gh issue close "$issue_number" --repo "${{ github.repository }}" --reason completed
+          done
