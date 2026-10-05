@@ -48,12 +48,7 @@ jobs:
           else
             COUNT="$(python3 scripts/collect_commands.py runtime/commands.json)"
           fi
-          PROCESSED="$(python3 - <<'PY'
-import json
-payload = json.load(open("runtime/commands.json", encoding="utf-8"))
-print(",".join(str(int(value)) for value in payload.get("processed_issue_numbers", [])))
-PY
-)"
+          PROCESSED="$(python3 -c 'import json; payload=json.load(open("runtime/commands.json", encoding="utf-8")); print(",".join(str(int(value)) for value in payload.get("processed_issue_numbers", [])))')"
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "processed_issues=$PROCESSED" >> "$GITHUB_OUTPUT"
           echo "Collected $COUNT command(s)"
