@@ -4,8 +4,10 @@
   "controller_issue": 1,
   "last_comment_id": 5995322660,
   "last_command_comment_id": 5995322660,
-  "input_count": 4,
-  "last_input": "/left",
+  "input_count": 5,
+  "last_input": "/use",
   "last_actor": "Unjuno",
-  "updated_at": "2026-10-05T13:22:42.846794+00:00"
+  "updated_at": "2026-10-05T14:15:31.337167+00:00",
+  "last_command_event_id": 5713587431,
+  "last_input_issue_number": 3
 }
