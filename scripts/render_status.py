@@ -35,7 +35,7 @@ def saved_time(value: Any) -> str:
         return "Save time unavailable"
 
 
-def render_status(state: dict[str, Any], theme: str) -> str:
+def render_status(state: dict[str, Any], theme: str, compact: bool = False) -> str:
     if theme not in PALETTES:
         raise ValueError("theme must be light or dark")
     count = state.get("input_count", 0)
@@ -47,16 +47,26 @@ def render_status(state: dict[str, Any], theme: str) -> str:
     bg, border, primary, secondary = PALETTES[theme]
     description = escape(f"Shared save snapshot. {count} recorded inputs. Last input: "
                          f"{command} by @{actor}. {stamp}. Not a live stream.")
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="640" height="120" viewBox="0 0 640 120" role="img" aria-labelledby="title desc">
+    width, height = (320, 104) if compact else (640, 88)
+    left, right = 14, width - 14
+    ys = (26, 57, 88) if compact else (24, 49, 74)
+    actor_width = 176 if compact else 390
+    input_x = 200 if compact else 464
+    actor_limit = 17 if compact else 24
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">
   <title id="title">Shared session snapshot</title>
   <desc id="desc">{description}</desc>
-  <rect x="0.5" y="0.5" width="639" height="119" rx="6" fill="{bg}" stroke="{border}"/>
+  <defs>
+    <clipPath id="actor-area"><rect x="{left}" y="{ys[1]-18}" width="{actor_width}" height="24"/></clipPath>
+    <clipPath id="input-area"><rect x="{input_x}" y="{ys[1]-18}" width="{right-input_x}" height="24"/></clipPath>
+  </defs>
+  <rect x="0.5" y="0.5" width="{width-1}" height="{height-1}" rx="6" fill="{bg}" stroke="{border}"/>
   <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
-    <text x="20" y="33" fill="{primary}" font-size="23" font-weight="600">Snapshot</text>
-    <text x="620" y="33" text-anchor="end" fill="{secondary}" font-size="22">{escape(clipped(str(count), 12))} inputs</text>
-    <text x="20" y="68" fill="{primary}" font-size="22">@{escape(clipped(actor, 24))}</text>
-    <text x="620" y="68" text-anchor="end" fill="{primary}" font-size="22">{escape(clipped(command, 15))}</text>
-    <text x="20" y="102" fill="{secondary}" font-size="22">{escape(stamp)}</text>
+    <text x="{left}" y="{ys[0]}" fill="{primary}" font-size="15" font-weight="600">Snapshot</text>
+    <text x="{right}" y="{ys[0]}" text-anchor="end" fill="{secondary}" font-size="14">{escape(clipped(str(count), 12))} inputs</text>
+    <text x="{left}" y="{ys[1]}" fill="{primary}" font-size="14" clip-path="url(#actor-area)">@{escape(clipped(actor, actor_limit))}</text>
+    <text x="{right}" y="{ys[1]}" text-anchor="end" fill="{primary}" font-size="14" clip-path="url(#input-area)">{escape(clipped(command, 15))}</text>
+    <text x="{left}" y="{ys[2]}" fill="{secondary}" font-size="14">{escape(stamp)}</text>
   </g>
 </svg>
 '''
@@ -74,8 +84,10 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     for theme, svg in outputs.items():
         # Versioned layout names bypass the old layout's Camo URL.
-        for filename in (f"status-v2-{theme}.svg", f"status-{theme}.svg"):
+        for filename in (f"status-v3-{theme}.svg", f"status-v2-{theme}.svg", f"status-{theme}.svg"):
             (args.output / filename).write_text(svg, encoding="utf-8")
+        (args.output / f"status-v3-mobile-{theme}.svg").write_text(
+            render_status(state, theme, compact=True), encoding="utf-8")
     (args.output / "status.svg").write_text(outputs["dark"], encoding="utf-8")
     gif = args.output / "doom.gif"
     if gif.is_file():
