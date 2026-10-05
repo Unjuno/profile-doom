@@ -96,6 +96,9 @@ def main() -> None:
         with Image.open(gif) as image:
             image.seek(image.n_frames - 1)
             image.convert("RGB").save(args.output / "doom-still.png")
+        # One image keeps the visual frame and its snapshot metadata together.
+        from render_panel import render_panels
+        render_panels(gif, state, args.output)
 
 
 if __name__ == "__main__":
