@@ -14,6 +14,21 @@ class RenderStatusTests(unittest.TestCase):
         self.state = {'input_count': 2, 'last_actor': 'Unjuno', 'last_input': '/right',
                       'updated_at': '2026-10-05T10:58:58.730053+00:00'}
 
+    def test_compact_variant_is_readable(self):
+        import inspect
+        self.assertIn('compact', inspect.signature(module.render_status).parameters)
+        svg = module.render_status(self.state, 'dark', compact=True)
+        root = ET.fromstring(svg)
+        self.assertEqual(root.attrib['viewBox'], '0 0 320 104')
+        texts = root.findall('.//{http://www.w3.org/2000/svg}text')
+        self.assertTrue(all(int(t.attrib['font-size']) >= 14 for t in texts))
+        self.assertEqual(len(root.findall('.//{http://www.w3.org/2000/svg}clipPath')), 2)
+
+    def test_desktop_typography_is_compact(self):
+        root = ET.fromstring(module.render_status(self.state, 'light'))
+        self.assertEqual(root.attrib['viewBox'], '0 0 640 88')
+        self.assertEqual(len(root.findall('.//{http://www.w3.org/2000/svg}clipPath')), 2)
+
     def test_api_exists(self):
         self.assertTrue(callable(getattr(module, 'render_status', None)), 'missing pure status renderer')
 
