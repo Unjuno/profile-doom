@@ -16,21 +16,36 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install DOOM runtime and capture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            chocolate-doom \
+            freedoom \
+            xvfb \
+            xdotool \
+            x11-utils \
+            ffmpeg \
+            python3-pil
 
-      - name: Install renderer dependency
-        run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Render real game session
+        run: bash scripts/capture_doom.sh
 
-      - name: Render profile assets
-        run: python scripts/render_profile.py
+      - name: Render status card
+        run: python3 scripts/render_status.py
+
+      - name: Verify generated assets
+        run: |
+          test -s site/doom.gif
+          test -s site/status.svg
+          file site/doom.gif
+          du -h site/doom.gif
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
