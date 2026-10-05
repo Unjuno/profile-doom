@@ -89,6 +89,41 @@ class IssueCommandTests(unittest.TestCase):
                 payload = parser(event, self.state)
                 self.assertEqual(payload["commands"][0]["command"], f"/{slug}")
 
+    def test_open_issue_queue_is_sorted_and_filters_invalid_or_old_items(self):
+        module = load_module()
+        self.assertTrue(callable(getattr(module, "collect_open_issue_commands", None)),
+                        "missing collect_open_issue_commands")
+        self.state["last_input_issue_number"] = 3
+        issues = [
+            {"id": 6006, "number": 6, "title": "runtime/input: fire", "body": "/fire",
+             "user": {"login": "c"}},
+            {"id": 6002, "number": 2, "title": "runtime/input: left", "body": "/left",
+             "user": {"login": "old"}},
+            {"id": 6005, "number": 5, "title": "runtime/input: right", "body": "/left",
+             "user": {"login": "bad"}},
+            {"id": 6004, "number": 4, "title": "runtime/input: forward", "body": "/forward",
+             "user": {"login": "a"}},
+            {"id": 6007, "number": 7, "title": "runtime/input: use", "body": "/use",
+             "user": {"login": "pr"}, "pull_request": {"url": "x"}},
+        ]
+        payload = module.collect_open_issue_commands(issues, self.state)
+        self.assertEqual(
+            [(x["issue_number"], x["command"], x["actor"]) for x in payload["commands"]],
+            [(4, "/forward", "a"), (6, "/fire", "c")],
+        )
+        self.assertEqual(payload["processed_issue_numbers"], [4, 6])
+
+    def test_open_issue_queue_keeps_comment_cursor_unchanged(self):
+        module = load_module()
+        self.state["last_comment_id"] = 1234
+        issues = [
+            {"id": 9002, "number": 9, "title": "runtime/input: back", "body": "/back",
+             "user": {"login": "octocat"}},
+        ]
+        payload = module.collect_open_issue_commands(issues, self.state)
+        self.assertEqual(payload["max_seen_comment_id"], 1234)
+        self.assertEqual(payload["previous_comment_id"], 1234)
+
 
 if __name__ == "__main__":
     unittest.main()
